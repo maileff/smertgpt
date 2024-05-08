@@ -34,23 +34,22 @@ async function incrementReferralCount(userId, referrerId) {
 }
 
 async function getUsernameFromTelegramAPI(userId) {
-    try {
-        if (!userId) {
-            console.error('user_id не предоставлен.');
-            return null;
-        }
-        
-        const chatMember = await bot.telegram.getChatMember(channelUsername, userId);
-        if (chatMember && chatMember.user && chatMember.user.username) {
-            return `@${chatMember.user.username}`;
-        }
-        return `@id${userId}`;
-    } catch (error) {
-        console.error('Ошибка при получении информации о пользователе:', error);
-        return null;
-    }
-}
+	try {
+		if (!userId) {
+			console.error('user_id не предоставлен.')
+			return null
+		}
 
+		const chatMember = await bot.telegram.getChatMember(channelUsername, userId)
+		if (chatMember && chatMember.user && chatMember.user.username) {
+			return `@${chatMember.user.username}`
+		}
+		return `@id${userId}`
+	} catch (error) {
+		console.error('Ошибка при получении информации о пользователе:', error)
+		return null
+	}
+}
 
 async function sendRulesMessage(ctx) {
 	const userId = ctx.from.id
@@ -64,52 +63,55 @@ async function sendRulesMessage(ctx) {
 }
 
 bot.start(async ctx => {
-    const userId = ctx.from.id;
-    const referrerId = ctx.message.text.split(' ')[1];
-    let chatMember;
+	const userId = ctx.from.id
+	const referrerId = ctx.message.text.split(' ')[1]
+	let chatMember
 
-    try {
-        chatMember = await bot.telegram.getChatMember(channelUsername, userId);
+	try {
+		chatMember = await bot.telegram.getChatMember(channelUsername, userId)
 
-        // Проверяем, заблокирован ли пользователь
-        if (chatMember.status === 'kicked') {
-            console.log(`Пользователь ${userId} заблокирован, команда игнорируется.`);
-            return; // Игнорируем команду от заблокированного пользователя
-        }
+		if (chatMember.status === 'kicked') {
+			console.log(`Пользователь ${userId} заблокирован, команда игнорируется.`)
+			return
+		}
 
-        // Ваша текущая логика обработки команды /start
+		const inlineKeyboard = Markup.inlineKeyboard([
+			Markup.button.callback('✅ Проверить подписку', 'check_subscription'),
+		])
 
-        const inlineKeyboard = Markup.inlineKeyboard([
-            Markup.button.callback('✅ Проверить подписку', 'check_subscription'),
-        ]);
+		const chatId = ctx.chat.id
+		const botBlocked = await isBotBlocked(ctx)
+		if (botBlocked) {
+			console.log(
+				`Бот заблокирован пользователем в чате ${chatId}, сообщение не будет отправлено.`
+			)
+			return
+		}
 
-        // Проверяем, заблокирован ли бот пользователем
-        const chatId = ctx.chat.id;
-        const botBlocked = await isBotBlocked(chatId);
-        if (botBlocked) {
-            console.log(`Бот заблокирован пользователем в чате ${chatId}, сообщение не будет отправлено.`);
-            return;
-        }
-
-        // Отправляем сообщение пользователю
-        ctx.reply('🪬  Для участия в конкурсе, вам нужно подписаться на этот канал @akaazerbaycan', {
-            reply_markup: {
-                inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
-            },
-        });
-    } catch (error) {
-        console.error('Ошибка при обработке команды /start:', error);
-    }
-});
+		ctx.reply(
+			'🪬  Для участия в конкурсе, вам нужно подписаться на этот канал @akaazerbaycan',
+			{
+				reply_markup: {
+					inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
+				},
+			}
+		)
+	} catch (error) {
+		console.error('Ошибка при обработке команды /start:', error)
+	}
+})
 
 async function isBotBlocked(chatId) {
-    try {
-        const chatMember = await bot.telegram.getChatMember(chatId, bot.telegram.botInfo.id);
-        return chatMember.status === 'kicked';
-    } catch (error) {
-        console.error('Ошибка при проверке блокировки бота пользователем:', error);
-        return false;
-    }
+	try {
+		const chatMember = await bot.telegram.getChatMember(
+			chatId,
+			bot.telegram.botInfo.id
+		)
+		return chatMember.status === 'kicked'
+	} catch (error) {
+		console.error('Ошибка при проверке блокировки бота пользователем:', error)
+		return false
+	}
 }
 
 bot.action('check_subscription', async ctx => {
@@ -129,7 +131,7 @@ bot.action('check_subscription', async ctx => {
 				{ source: './img/1.jpeg' },
 				{
 					caption: `Telegramda yeni " Giwe away" 🎁🥰\n\nQalib olmaq çox asandır ❗\n\nTelegram kanalımızın "link"-ini  ( https://t.me/akaazerbaycan )  dostlarınızla bölüşün və hədiyyə qazanın. 😍\n\nƏn çox  keçid edilən link-in sahibi qalıb olacaq.\n\nHər kəsə uğurlar❗🥰\n\nQeyd: Minimum keçid limiti -500 dür.\n\nİlk 5 yer 🎁\n📌 I yer 100₼\n📌 II yer 50 ₼\n📌 III yer 30₼\n📌 IV yer 15₼\n📌 V yer 10₼
-                        \n\nReferral linkiniz: ${referralLink}`,
+													\n\nReferral linkiniz: ${referralLink}`,
 				}
 			)
 			await ctx.reply(
@@ -154,10 +156,7 @@ bot.hears('📝RULES', async ctx => {
 	const userName = ctx.from.username
 
 	try {
-		const chatMember = await ctx.telegram.getChatMember(
-			channelUsername,
-			userId
-		)
+		const chatMember = await ctx.telegram.getChatMember(channelUsername, userId)
 
 		if (
 			chatMember.status === 'member' ||
@@ -188,11 +187,11 @@ async function updateLeaderboardFromDatabase() {
 		])
 
 		for (const user of leaderboard) {
-			const userPosition =
-				leaderboard.findIndex(item => item._id === user._id.toString()) + 1
-			leaderboard[userPosition - 1] = {
-				userName: user._id,
-				referralCount: user.referralCount,
+			if (user._id) {
+				const userPosition =
+					leaderboard.findIndex(
+						item => item._id.toString() === user._id.toString()
+					) + 1
 			}
 		}
 	} catch (error) {
@@ -213,11 +212,14 @@ async function sendLeaderboardMessage(ctx, userId) {
 			? leaderboard.find(item => item._id === userId.toString())
 			: null
 
-		const userPosition = userInLeaderboard
-			? leaderboard.findIndex(
-					item => item._id.toString() === userId.toString()
-			  ) + 1
-			: 'sıralamada deyilsiniz'
+		const userPosition =
+			leaderboard.findIndex(
+				item => item._id && item._id.toString() === userId.toString()
+			) !== -1
+				? leaderboard.findIndex(
+						item => item._id && item._id.toString() === userId.toString()
+				  ) + 1
+				: 'sıralamada deyilsiniz'
 
 		const currentUser = await Referral.findOne({ userId })
 
@@ -252,10 +254,7 @@ bot.hears('🏆LEADERBOARD', async ctx => {
 		const userId = ctx.from.id
 		const userName = ctx.from.username
 
-		const chatMember = await ctx.telegram.getChatMember(
-			channelUsername,
-			userId
-		)
+		const chatMember = await ctx.telegram.getChatMember(channelUsername, userId)
 
 		if (
 			chatMember.status === 'member' ||
@@ -275,4 +274,17 @@ bot.hears('🏆LEADERBOARD', async ctx => {
 	}
 })
 
-bot.launch()
+bot.on('message', async ctx => {
+	try {
+	} catch (error) {
+		if (error.code === 403) {
+			console.log('Ошибка 403: Пользователь заблокировал бота')
+		} else {
+			console.error('Ошибка:', error)
+		}
+	}
+})
+
+bot.launch().then(() => {
+	console.log('Бот запущен')
+})
