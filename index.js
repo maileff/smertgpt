@@ -12,7 +12,7 @@ mongoose
 	.then(() => console.log('Connected to MongoDB'))
 	.catch(err => console.error('Failed to connect to MongoDB', err))
 
-const channelUsername = 'akaazerbaycan'
+const channelUsername = `@akaazerbaycan`
 
 async function incrementReferralCount(userId, referrerId) {
 	try {
@@ -145,7 +145,7 @@ bot.hears('📝RULES', async ctx => {
 
 	try {
 		const chatMember = await ctx.telegram.getChatMember(
-			'@' + channelUsername,
+			channelUsername,
 			userId
 		)
 
@@ -243,7 +243,7 @@ bot.hears('🏆LEADERBOARD', async ctx => {
 		const userName = ctx.from.username
 
 		const chatMember = await ctx.telegram.getChatMember(
-			'@' + channelUsername,
+			channelUsername,
 			userId
 		)
 
