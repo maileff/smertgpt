@@ -34,17 +34,23 @@ async function incrementReferralCount(userId, referrerId) {
 }
 
 async function getUsernameFromTelegramAPI(userId) {
-	try {
-		const chatMember = await bot.telegram.getChatMember(channelUsername, userId)
-		if (chatMember && chatMember.user && chatMember.user.username) {
-			return `@${chatMember.user.username}`
-		}
-		return `@id${userId}`
-	} catch (error) {
-		console.error('Ошибка при получении информации о пользователе:', error)
-		return `@id${userId}`
-	}
+    try {
+        if (!userId) {
+            console.error('user_id не предоставлен.');
+            return null;
+        }
+        
+        const chatMember = await bot.telegram.getChatMember(channelUsername, userId);
+        if (chatMember && chatMember.user && chatMember.user.username) {
+            return `@${chatMember.user.username}`;
+        }
+        return `@id${userId}`;
+    } catch (error) {
+        console.error('Ошибка при получении информации о пользователе:', error);
+        return null;
+    }
 }
+
 
 async function sendRulesMessage(ctx) {
 	const userId = ctx.from.id
@@ -65,49 +71,46 @@ bot.start(async ctx => {
     try {
         chatMember = await bot.telegram.getChatMember(channelUsername, userId);
 
-        // Kullanıcının bloklanıp bloklanmadığını kontrol edin
+        // Проверяем, заблокирован ли пользователь
         if (chatMember.status === 'kicked') {
-            console.log(`İstifadəçi ${userId} bloklanmışdır, əmr göz ardı edilir.`);
-            return; // Bloklanmış bir kullanıcının əmrini göz ardı edin
+            console.log(`Пользователь ${userId} заблокирован, команда игнорируется.`);
+            return; // Игнорируем команду от заблокированного пользователя
         }
 
-        // Kullanıcının kanala abone olmadığını kontrol edin
-        if (
-            chatMember.status !== 'member' &&
-            chatMember.status !== 'administrator' &&
-            chatMember.status !== 'creator'
-        ) {
-            if (referrerId && referrerId !== userId.toString()) {
-                await incrementReferralCount(userId, referrerId);
-            } else {
-                const existingReferral = await Referral.findOne({
-                    userId: userId,
-                    invitedBy: referrerId,
-                });
-
-                if (!existingReferral) {
-                    const referrerUsername = await getUsernameFromTelegramAPI(referrerId);
-                    await incrementReferralCount(userId, referrerId);
-                }
-            }
-        }
-
-        // Diğer kodlarınızı buraya ekleyin
+        // Ваша текущая логика обработки команды /start
 
         const inlineKeyboard = Markup.inlineKeyboard([
-            Markup.button.callback('✅ Abunəliyi yoxla', 'check_subscription'),
+            Markup.button.callback('✅ Проверить подписку', 'check_subscription'),
         ]);
 
-        ctx.reply('🪬  Müsabiqəyə iştirak etmək üçün bu kanalı @testcoinzzz abunə olmalısınız', {
+        // Проверяем, заблокирован ли бот пользователем
+        const chatId = ctx.chat.id;
+        const botBlocked = await isBotBlocked(chatId);
+        if (botBlocked) {
+            console.log(`Бот заблокирован пользователем в чате ${chatId}, сообщение не будет отправлено.`);
+            return;
+        }
+
+        // Отправляем сообщение пользователю
+        ctx.reply('🪬  Для участия в конкурсе, вам нужно подписаться на этот канал @testcoinzzz', {
             reply_markup: {
                 inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
             },
         });
     } catch (error) {
-        console.error('"/start" əmri işlənərkən xəta:', error);
+        console.error('Ошибка при обработке команды /start:', error);
     }
 });
 
+async function isBotBlocked(chatId) {
+    try {
+        const chatMember = await bot.telegram.getChatMember(chatId, bot.telegram.botInfo.id);
+        return chatMember.status === 'kicked';
+    } catch (error) {
+        console.error('Ошибка при проверке блокировки бота пользователем:', error);
+        return false;
+    }
+}
 
 bot.action('check_subscription', async ctx => {
 	const userId = ctx.callbackQuery.from.id
