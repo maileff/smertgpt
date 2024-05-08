@@ -58,49 +58,56 @@ async function sendRulesMessage(ctx) {
 }
 
 bot.start(async ctx => {
-	const userId = ctx.from.id
-	const referrerId = ctx.message.text.split(' ')[1]
+    const userId = ctx.from.id;
+    const referrerId = ctx.message.text.split(' ')[1];
+    let chatMember;
 
-	try {
-		const chatMember = await bot.telegram.getChatMember(channelUsername, userId)
+    try {
+        chatMember = await bot.telegram.getChatMember(channelUsername, userId);
 
-		if (
-			chatMember.status !== 'member' &&
-			chatMember.status !== 'administrator' &&
-			chatMember.status !== 'creator'
-		) {
-			if (referrerId && referrerId !== userId.toString()) {
-				await incrementReferralCount(userId, referrerId)
-			} else {
-				const existingReferral = await Referral.findOne({
-					userId: userId,
-					invitedBy: referrerId,
-				})
+        // Kullanıcının bloklanıp bloklanmadığını kontrol edin
+        if (chatMember.status === 'kicked') {
+            console.log(`İstifadəçi ${userId} bloklanmışdır, əmr göz ardı edilir.`);
+            return; // Bloklanmış bir kullanıcının əmrini göz ardı edin
+        }
 
-				if (!existingReferral) {
-					const referrerUsername = await getUsernameFromTelegramAPI(referrerId)
-					await incrementReferralCount(userId, referrerId)
-				}
-			}
-		}
+        // Kullanıcının kanala abone olmadığını kontrol edin
+        if (
+            chatMember.status !== 'member' &&
+            chatMember.status !== 'administrator' &&
+            chatMember.status !== 'creator'
+        ) {
+            if (referrerId && referrerId !== userId.toString()) {
+                await incrementReferralCount(userId, referrerId);
+            } else {
+                const existingReferral = await Referral.findOne({
+                    userId: userId,
+                    invitedBy: referrerId,
+                });
 
-		const inlineKeyboard = Markup.inlineKeyboard([
-			Markup.button.callback('✅Yoxla', 'check_subscription'),
-		])
+                if (!existingReferral) {
+                    const referrerUsername = await getUsernameFromTelegramAPI(referrerId);
+                    await incrementReferralCount(userId, referrerId);
+                }
+            }
+        }
 
-		ctx.reply(
-			'🪬  Yarışmaya qatılmaq üçün siz bu səhifəyə abunə olmalısız @akaazerbaycan',
-			{
-				reply_markup: {
-					inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
-				},
-			}
-		)
-	} catch (error) {
-		console.error('Ошибка при обработке команды /start:', error)
-		ctx.reply('Произошла ошибка, пожалуйста, попробуйте еще раз.')
-	}
-})
+        // Diğer kodlarınızı buraya ekleyin
+
+        const inlineKeyboard = Markup.inlineKeyboard([
+            Markup.button.callback('✅ Abunəliyi yoxla', 'check_subscription'),
+        ]);
+
+        ctx.reply('🪬  Müsabiqəyə iştirak etmək üçün bu kanalı @testcoinzzz abunə olmalısınız', {
+            reply_markup: {
+                inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
+            },
+        });
+    } catch (error) {
+        console.error('"/start" əmri işlənərkən xəta:', error);
+    }
+});
+
 
 bot.action('check_subscription', async ctx => {
 	const userId = ctx.callbackQuery.from.id
