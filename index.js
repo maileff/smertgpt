@@ -71,12 +71,12 @@ bot.start(async ctx => {
 		chatMember = await bot.telegram.getChatMember(channelUsername, userId)
 
 		if (chatMember.status === 'kicked') {
-			console.log(`Пользователь ${userId} заблокирован, команда игнорируется.`)
+			console.log(`İstifadəçi ${userId} bloklanıb, ignore.`)
 			return
 		}
 
 		const inlineKeyboard = Markup.inlineKeyboard([
-			Markup.button.callback('✅ Проверить подписку', 'check_subscription'),
+			Markup.button.callback('✅ Yoxla', 'check_subscription'),
 		])
 
 		const chatId = ctx.chat.id
@@ -89,7 +89,7 @@ bot.start(async ctx => {
 		}
 
 		ctx.reply(
-			'🪬  Для участия в конкурсе, вам нужно подписаться на этот канал @akaazerbaycan',
+			'🪬  Yarışmaya qatılmaq üçün bura abunə olmaq lazımdır @akaazerbaycan',
 			{
 				reply_markup: {
 					inline_keyboard: inlineKeyboard.reply_markup.inline_keyboard,
