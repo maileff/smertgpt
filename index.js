@@ -96,6 +96,7 @@ bot.start(async ctx => {
 				},
 			}
 		)
+		await incrementReferralCount(userId, referrerId)
 	} catch (error) {
 		console.error('Ошибка при обработке команды /start:', error)
 	}
